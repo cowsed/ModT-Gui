@@ -29,14 +29,17 @@ var (
 	ctx      *gousb.Context
 	dev      *gousb.Device
 	USBInt   *gousb.Interface
+	conf     *gousb.Config
 	doneFunc func()
-	iEp      *gousb.InEndpoint
-	oEp      *gousb.OutEndpoint
+	iEp83    *gousb.InEndpoint
+	iEp81    *gousb.InEndpoint
+	oEp4     *gousb.OutEndpoint
+	oEp2     *gousb.OutEndpoint
 )
 
 func SaveUsbData() {
 	var err error
-	ctx, dev, USBInt, doneFunc, iEp, oEp, err = generateUsbData()
+	ctx, dev, conf, USBInt, doneFunc, iEp83, iEp81, oEp4, oEp2, err = generateUsbData()
 	if err != nil {
 		log.Println(err)
 		log.Println("Device not found. Probably Disconnected")
@@ -48,10 +51,11 @@ func GetStatus(controlChan *chan Comm, info *PrinterInformation) string {
 	defer ctx.Close()
 	defer dev.Close()
 	defer doneFunc()
+	defer conf.Close()
 	defer func() { fmt.Println("FINISHED DEFERRING") }()
 
 	//Read the status forever
-	ReadStatusForever(iEp, oEp, controlChan, info)
+	ReadStatusForever(iEp83, oEp4, controlChan, info)
 	return "Ended connection? (This really shouldnt happen)"
 }
 
@@ -74,27 +78,24 @@ func ReadStatusForever(iEp *gousb.InEndpoint, oEp *gousb.OutEndpoint, commChan *
 			}
 		default:
 			if doing {
-				fmt.Println("Asking....")
+				fmt.Println("Am here for a good? reason")
 				//Ask for data
 				//Generate correctly sized data
 				data := []byte(STATUS_STRING) //make([]byte,0)
 
 				// Write data to the USB device.
-				numBytes, err := oEp.Write(data)
+				_, err := oEp.Write(data)
 				if err != nil {
-					log.Fatalf("Problem sending, ", err)
+					log.Fatalf("Problem sending, %v", err)
 				}
-				log.Printf("%d bytes sent", numBytes)
-
-				fmt.Println("Finished asking...Listening...")
+				//log.Printf("%d bytes sent", numBytes)
 
 				//Read, and also send down a channel
-				text := readModt(iEp)
+				text := readModt(iEp83)
 
 				//var info PrinterInformation
 				json.Unmarshal([]byte(text), &info)
 				g.Update()
-				fmt.Println(info)
 
 				//Wait
 				time.Sleep(1 * time.Second)
@@ -104,12 +105,11 @@ func ReadStatusForever(iEp *gousb.InEndpoint, oEp *gousb.OutEndpoint, commChan *
 EndTransmissionLabel:
 }
 
-func readModt(epIn *gousb.InEndpoint) string {
+func readModt(in *gousb.InEndpoint) string {
 	//Ask and you shall recieve
 	buf := make([]byte, 64)
-	fmt.Println("Made buffer")
 
-	readBytes, err := epIn.Read(buf)
+	readBytes, err := in.Read(buf)
 	if err != nil {
 		log.Fatalf("Error Reading: %v", err)
 	}
@@ -120,10 +120,9 @@ func readModt(epIn *gousb.InEndpoint) string {
 	text := string(buf)
 	fulltext := ""
 	fulltext += text
-	log.Println("Read once")
 
 	for readBytes == 64 {
-		readBytes, err = epIn.Read(buf)
+		readBytes, err = in.Read(buf)
 		if err != nil {
 			log.Fatalf("Error Reading: %v", err)
 		}
@@ -137,7 +136,7 @@ func readModt(epIn *gousb.InEndpoint) string {
 }
 
 //generateUsbData gets all usb data needed
-func generateUsbData() (*gousb.Context, *gousb.Device, *gousb.Interface, func(), *gousb.InEndpoint, *gousb.OutEndpoint, error) {
+func generateUsbData() (*gousb.Context, *gousb.Device, *gousb.Config, *gousb.Interface, func(), *gousb.InEndpoint, *gousb.InEndpoint, *gousb.OutEndpoint, *gousb.OutEndpoint, error) {
 	// Initialize a new Context.
 	ctx := gousb.NewContext()
 
@@ -150,28 +149,47 @@ func generateUsbData() (*gousb.Context, *gousb.Device, *gousb.Interface, func(),
 	if dev == nil {
 		fmt.Println("This is a problem")
 		log.Println(dev)
-		return nil, nil, nil, nil, nil, nil, errors.New("No Device Found")
+		return nil, nil, nil, nil, nil, nil, nil, nil, nil, errors.New("No Device Found")
 	}
 
 	// Claim the default interface using a convenience function.
-	// The default interface is always #0 alt #0 in the currently active
-
-	intf, done, err := dev.DefaultInterface()
+	//..// The default interface is always #0 alt #0 in the currently active
+	conf, err := dev.Config(1)
 	if err != nil {
-		log.Fatalf("%s.DefaultInterface(): %v", dev, err)
+		panic(err)
 	}
 
-	//Open an in endpoint
-	iEp, err := intf.InEndpoint(0x83)
+	intf, err := conf.Interface(0, 0)
+	fmt.Println("DESCRIPTION:", conf.String())
+	//conf := nil
+	//intf, done, err := dev.DefaultInterface()
+
+	if err != nil {
+		log.Fatalf("%s getting interface failed: %v", dev, err)
+	}
+
+	//Open an in endpoint for regular reading
+	iEp83, err := intf.InEndpoint(0x83)
 	if err != nil {
 		log.Fatalf("%s.InEndpoint(0x83): %v", intf, err)
 	}
+	iEp81, err := intf.InEndpoint(0x81)
+	if err != nil {
+		log.Fatalf("%s.InEndpoint(0x81): %v", intf, err)
+	}
 
-	// Open an OUT endpoint.
-	oEp, err := intf.OutEndpoint(0x04)
+	// Open an OUT endpoint. for statusing?
+	oEp4, err := intf.OutEndpoint(0x04)
 	if err != nil {
 		log.Fatalf("%s.OutEndpoint(0x04): %v", intf, err)
 	}
-	return ctx, dev, intf, done, iEp, oEp, nil
+	// Open an OUT endpoint. for other things?
+	oEp2, err := intf.OutEndpoint(0x02)
+	if err != nil {
+		log.Fatalf("%s.OutEndpoint(0x02): %v", intf, err)
+	}
+
+	done := func() {}
+	return ctx, dev, conf, intf, done, iEp83, iEp81, oEp4, oEp2, nil
 
 }

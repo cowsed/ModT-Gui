@@ -20,7 +20,9 @@ var commChan chan modt.Comm
 var currentInfo modt.PrinterInformation
 
 func Connect() {
+
 	if !connected {
+		fmt.Println("Connecting...")
 		connected = true
 		go func() {
 			commChan <- modt.COMM_PLAY

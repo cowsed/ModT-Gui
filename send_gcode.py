@@ -20,7 +20,7 @@ def adler32_checksum(fname):
  f = open(fname, "rb")
  while True:
    data = f.read(BLOCKSIZE)
-   print(data)
+   #print(data)
    if not data:
       print("broke at",data)
       break
@@ -28,6 +28,7 @@ def adler32_checksum(fname):
    if asum < 0:
         asum += 2**32
  f.close()
+ print(asum)
  return asum
 
 # Read pending data from MOD-t (bulk reads of 64 bytes)
@@ -72,7 +73,11 @@ if dev is None:
 
 # set the active configuration. With no arguments, the first
 # configuration will be the active one
-dev.set_configuration()
+#dev.set_configuration()
+
+
+
+
 
 # These came from usb dump. 
 # Some commands are human readable some are maybe checksums 
@@ -82,6 +87,7 @@ print(read_modt(0x81))
 
 dev.write(4, '{"metadata":{"version":1,"type":"status"}}')
 print(read_modt(0x83))
+
 
 dev.write(2, bytearray.fromhex('248b0074ff'))
 dev.write(2, '{"transport":{"attrs":["request","twoway"],"id":5},"data":{"command":{"idx":22,"name":"wifi_client_get_status","args":{"interface_t":0}}}};')
@@ -97,10 +103,15 @@ print(read_modt(0x83))
 dev.write(4, '{"metadata":{"version":1,"type":"status"}}')
 print(read_modt(0x83))
 
+
+
 # Start writing actual gcode
 # File size and adler32 checksum calculated earlier
 dev.write(4, '{"metadata":{"version":1,"type":"file_push"},"file_push":{"size":'+str(size)+',"adler32":'+str(checksum)+',"job_id":""}}')
 
+print("\n\n\n")
+print('{"metadata":{"version":1,"type":"file_push"},"file_push":{"size":'+str(size)+',"adler32":'+str(checksum)+',"job_id":""}}')
+print("\n\n\n")
 # Write gcode in batches of 20 bulk writes, each 5120 bytes. 
 # Read mod-t status between these 20 bulk writes
 

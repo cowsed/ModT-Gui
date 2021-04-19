@@ -16,25 +16,33 @@ func (p PrinterInformation) Build() g.Widget {
 				g.Label(fmt.Sprintf("Model: %v", p.Printer.ModelName)),
 				g.Label(fmt.Sprintf("CPUID: %v", p.Printer.CPUID)),
 				g.TreeNode("Firmware:").Layout(
-					g.Label(fmt.Sprintf("Name: %v",p.Printer.Firmware.Name)),
-					g.Label(fmt.Sprintf("Version: %v",p.Printer.Firmware.Version)),
+					g.Label(fmt.Sprintf("Name: %v", p.Printer.Firmware.Name)),
+					g.Label(fmt.Sprintf("Version: %v", p.Printer.Firmware.Version)),
 				).Flags(g.TreeNodeFlagsFramed),
 				g.Label(fmt.Sprintf("Accept Version: %v", p.Printer.AcceptVersion)),
 			).Flags(g.TreeNodeFlagsFramed),
 
 			g.TreeNode("Status").Layout(
-				g.Label(fmt.Sprintf("State: %v",p.Status.State)),
-				g.Label(fmt.Sprintf("Plate: %v",p.Status.BuildPlate)),
-				g.Label(fmt.Sprintf("Filament: %v",p.Status.Filament)),
-				g.Label(fmt.Sprintf("Extruder Temp: %vC",p.Status.ExtruderTemperature)),
-				g.Label(fmt.Sprintf("Extruder Target: %vC",p.Status.ExtruderTargetTemperature)),
+				g.Label(fmt.Sprintf("State: %v", p.Status.State)),
+				g.Label(fmt.Sprintf("Plate: %v", p.Status.BuildPlate)),
+				g.Label(fmt.Sprintf("Filament: %v", p.Status.Filament)),
+				g.Label(fmt.Sprintf("Extruder Temp: %vC", p.Status.ExtruderTemperature)),
+				g.Label(fmt.Sprintf("Extruder Target: %vC", p.Status.ExtruderTargetTemperature)),
 			).Flags(g.TreeNodeFlagsFramed),
 			g.TreeNode("Job").Layout(
-				g.Label(fmt.Sprint(p.Job)),
+				g.Label(fmt.Sprintf("ID: %v", p.Job.ID)),
+				g.Label(fmt.Sprintf("Source: %v", p.Job.Source)),
+				g.Label(fmt.Sprintf("RxProgress: %v", p.Job.RxProgress)),
+				g.Label(fmt.Sprintf("CurrentLineNumber: %v", p.Job.CurrentLineNumber)),
+				g.Label(fmt.Sprintf("CurrentGcodeNumber: %v", p.Job.CurrentGcodeNumber)),
+				g.Label(fmt.Sprintf("FileSize: %v", p.Job.FileSize)),
+				g.Label(fmt.Sprintf("File: %v", p.Job.File)),
+
 			).Flags(g.TreeNodeFlagsFramed),
+
 			g.TreeNode("Time").Layout(
-				g.Label(fmt.Sprintf("Boot Time: %d:%d", p.Time.Boot/60,p.Time.Boot%60)),
-				g.Label(fmt.Sprintf("Idle Time: %d:%d", p.Time.Idle/60,p.Time.Idle%60)),
+				g.Label(fmt.Sprintf("Boot Time: %d:%d", p.Time.Boot/60, p.Time.Boot%60)),
+				g.Label(fmt.Sprintf("Idle Time: %d:%d", p.Time.Idle/60, p.Time.Idle%60)),
 			).Flags(g.TreeNodeFlagsFramed),
 		).Flags(g.TreeNodeFlagsFramed),
 	)
