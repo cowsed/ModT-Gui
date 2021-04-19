@@ -37,6 +37,7 @@ func ReadStatusForever(iEp *gousb.InEndpoint, oEp *gousb.OutEndpoint, commChan *
 		select {
 		case do := <-*commChan:
 			doing = do
+			fmt.Println("Set logging to ",doing)
 		default:
 			if doing {
 				fmt.Println("Asking....")
@@ -57,7 +58,7 @@ func ReadStatusForever(iEp *gousb.InEndpoint, oEp *gousb.OutEndpoint, commChan *
 				text := readModt(iEp)
 				fmt.Println(text)
 				//Wait
-				time.Sleep(2 * time.Second)
+				time.Sleep(1 * time.Second)
 			}
 		}
 	}

@@ -7,10 +7,14 @@ import (
 
 //Runs the python version of this until I can figure out how configurations work
 func LoadFilamentTemp() {
+	log.Println("Begginging load filament\n\n\n\n\n\n")
 	cmd := exec.Command("python", "load_filament.py")
 	log.Printf("Running command and waiting for it to finish...")
-	err := cmd.Run()
+	out,err := cmd.CombinedOutput()
 	log.Printf("Command finished with error: %v", err)
+	log.Println("Output:\n"+string(out))
+	log.Println("ending load filament\n\n\n\n\n\n")
+
 }
 
 const (
