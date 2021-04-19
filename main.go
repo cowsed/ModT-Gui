@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./Scripts"
+	"github.com/cowsed/ModT-Gui/Scripts"
 
 	g "github.com/AllenDang/giu"
 
@@ -123,7 +123,7 @@ func loop() {
 						g.Button("Play").OnClick(Play),
 
 						g.Line(
-							g.InputText("##Filename", &filepath).Flags(g.InputTextFlagsReadOnly).Size(-1.0),
+							g.InputText("##Filename", &filepath).Flags(g.InputTextFlags_ReadOnly).Size(-1.0),
 						),
 					},
 					g.Layout{
@@ -132,7 +132,7 @@ func loop() {
 				),
 			},
 			g.Layout{
-				g.InputTextMultiline("##DroppedFiles", &filecontents).Flags(g.InputTextFlagsReadOnly+g.InputTextFlagsAlwaysInsertMode).Size(-1, -1),
+				g.InputTextMultiline("##DroppedFiles", &filecontents).Flags(g.InputTextFlags_ReadOnly).Size(-1, -1),
 			},
 		),
 	)
