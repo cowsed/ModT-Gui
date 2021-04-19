@@ -17,8 +17,6 @@ func UpdateStyle() {
 		imgui.StyleColorsDark()
 	case 2:
 		imgui.StyleColorsLight()
-	case 3:
-		SetBi()
 
 	}
 }
@@ -44,29 +42,4 @@ func loadFileToEditor(fname string) {
 		log += "- Error Loading File"
 	}
 	filecontents = string(content)
-}
-
-func SetBi() {
-	c1 := imgui.Vec4{1, 0.459, 0.839, 1.0}
-	c2 := imgui.Vec4{0.741, 0.376, 0.706, 1.0}
-	c3 := imgui.Vec4{0.639, 0.49, 0.875, 1.0}
-	c4 := imgui.Vec4{0.353, 0.682, 0.882, 1.0}
-	c5 := imgui.Vec4{0.533, 0.776, 0.925, 1.0}
-
-	b := imgui.Vec4{0.0, 0.0, 0.0, 1.0}
-
-	imgui.StyleColorsClassic()
-	s := imgui.CurrentStyle()
-
-	s.SetColor(imgui.StyleColorText, b)
-
-	s.SetColor(imgui.StyleColorMenuBarBg, c3)
-
-	s.SetColor(imgui.StyleColorPopupBg, c2)
-
-	s.SetColor(imgui.StyleColorButton, c1)
-	s.SetColor(imgui.StyleColorButtonHovered, c3)
-	s.SetColor(imgui.StyleColorWindowBg, c5)
-
-	s.SetColor(imgui.StyleColorTextSelectedBg, c4)
 }

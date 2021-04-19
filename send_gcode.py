@@ -20,8 +20,10 @@ def adler32_checksum(fname):
  f = open(fname, "rb")
  while True:
    data = f.read(BLOCKSIZE)
+   print(data)
    if not data:
-        break
+      print("broke at",data)
+      break
    asum = adler32(data, asum)
    if asum < 0:
         asum += 2**32

@@ -14,7 +14,6 @@ func LoadFilamentTemp() {
 	log.Printf("Command finished with error: %v", err)
 	log.Println("Output:\n"+string(out))
 	log.Println("ending load filament\n\n\n\n\n\n")
-
 }
 
 const (

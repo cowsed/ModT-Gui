@@ -1,11 +1,13 @@
 package modt
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	g "github.com/AllenDang/giu"
 	"github.com/google/gousb"
 	"log"
 	"time"
-	"errors"
 )
 
 const (
@@ -15,29 +17,61 @@ const (
 	STATUS_STRING = `{"metadata":{"version":1,"type":"status"}}`
 )
 
-func GetStatus(controlChan *chan bool) string {
-	ctx, dev, _, done, iEp, oEp, err := generateUsbData()
-	if err!=nil{
+type Comm int
+
+const (
+	COMM_PAUSE Comm = iota
+	COMM_PLAY
+	COMM_END
+)
+
+var (
+	ctx      *gousb.Context
+	dev      *gousb.Device
+	USBInt   *gousb.Interface
+	doneFunc func()
+	iEp      *gousb.InEndpoint
+	oEp      *gousb.OutEndpoint
+)
+
+func SaveUsbData() {
+	var err error
+	ctx, dev, USBInt, doneFunc, iEp, oEp, err = generateUsbData()
+	if err != nil {
 		log.Println(err)
-		return "Device not found. Probably Disconnected"
+		log.Println("Device not found. Probably Disconnected")
+		return
 	}
+}
+
+func GetStatus(controlChan *chan Comm, info *PrinterInformation) string {
 	defer ctx.Close()
 	defer dev.Close()
-	defer done()
+	defer doneFunc()
+	defer func() { fmt.Println("FINISHED DEFERRING") }()
 
 	//Read the status forever
-	ReadStatusForever(iEp, oEp, controlChan)
+	ReadStatusForever(iEp, oEp, controlChan, info)
 	return "Ended connection? (This really shouldnt happen)"
 }
 
-func ReadStatusForever(iEp *gousb.InEndpoint, oEp *gousb.OutEndpoint, commChan *chan bool) {
+func ReadStatusForever(iEp *gousb.InEndpoint, oEp *gousb.OutEndpoint, commChan *chan Comm, info *PrinterInformation) {
 	doing := false
 	for {
 		//Check if checking should happen
 		select {
 		case do := <-*commChan:
-			doing = do
-			fmt.Println("Set logging to ",doing)
+			//doing = do
+			if do == COMM_PLAY {
+				doing = true
+				fmt.Println("Will Log")
+			} else if do == COMM_PAUSE {
+				doing = false
+				fmt.Println("Will Not Log")
+			} else if do == COMM_END { //End transmission and hopefully things will defer
+				fmt.Println("Ending transmission")
+				goto EndTransmissionLabel
+			}
 		default:
 			if doing {
 				fmt.Println("Asking....")
@@ -56,13 +90,18 @@ func ReadStatusForever(iEp *gousb.InEndpoint, oEp *gousb.OutEndpoint, commChan *
 
 				//Read, and also send down a channel
 				text := readModt(iEp)
-				fmt.Println(text)
+
+				//var info PrinterInformation
+				json.Unmarshal([]byte(text), &info)
+				g.Update()
+				fmt.Println(info)
+
 				//Wait
 				time.Sleep(1 * time.Second)
 			}
 		}
 	}
-
+EndTransmissionLabel:
 }
 
 func readModt(epIn *gousb.InEndpoint) string {
@@ -97,6 +136,7 @@ func readModt(epIn *gousb.InEndpoint) string {
 	return fulltext
 }
 
+//generateUsbData gets all usb data needed
 func generateUsbData() (*gousb.Context, *gousb.Device, *gousb.Interface, func(), *gousb.InEndpoint, *gousb.OutEndpoint, error) {
 	// Initialize a new Context.
 	ctx := gousb.NewContext()
@@ -110,7 +150,7 @@ func generateUsbData() (*gousb.Context, *gousb.Device, *gousb.Interface, func(),
 	if dev == nil {
 		fmt.Println("This is a problem")
 		log.Println(dev)
-		return nil,nil,nil,nil,nil,nil,errors.New("No Device Found")
+		return nil, nil, nil, nil, nil, nil, errors.New("No Device Found")
 	}
 
 	// Claim the default interface using a convenience function.
@@ -132,6 +172,6 @@ func generateUsbData() (*gousb.Context, *gousb.Device, *gousb.Interface, func(),
 	if err != nil {
 		log.Fatalf("%s.OutEndpoint(0x04): %v", intf, err)
 	}
-	return ctx, dev, intf, done, iEp, oEp,nil
+	return ctx, dev, intf, done, iEp, oEp, nil
 
 }
